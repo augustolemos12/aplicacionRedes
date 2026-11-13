@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acerca del Servidor - Arquitectura TCP y HTTP/1.1</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-flex">
+      <div class="brand">
+        <img src="/logo.svg" alt="Icono Servidor HTTP" class="logo" width="44" height="44">
+        <div>
+          <h1>Arquitectura y Fundamentos de Red</h1>
+          <p class="subtitle">Separación entre Transporte (TCP) y Aplicación (HTTP/1.1)</p>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="/">Inicio</a>
+        <a href="/about.html" class="active">Arquitectura TCP/HTTP</a>
+        <a href="/private/">Área Protegida</a>
+        <a href="/admin">Panel Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>1. Diferencia entre TCP y HTTP en nuestra implementación</h2>
+      <p>
+        <strong>TCP (Transmission Control Protocol)</strong> opera en la capa de transporte y proporciona un flujo continuo, ordenado y confiable de bytes entre el socket del cliente y el socket del servidor (<code>server/socket_server.py</code>). TCP no conoce el concepto de "mensaje", "encabezado" ni "archivo": una llamada a <code>sock.recv()</code> puede devolver una fracción de línea o varios fragmentos juntos.
+      </p>
+      <p>
+        <strong>HTTP/1.1 (Hypertext Transfer Protocol)</strong> opera en la capa de aplicación (<code>server/http_parser.py</code> y <code>server/response.py</code>). Define cómo estructurar e interpretar ese flujo de bytes mediante:
+      </p>
+      <ul>
+        <li>Una línea de inicio terminada en <code>CRLF</code> (<code>\r\n</code>), por ejemplo: <code>GET /about.html HTTP/1.1</code>.</li>
+        <li>Encabezados clave-valor insensibles a mayúsculas/minúsculas.</li>
+        <li>Una línea vacía (<code>\r\n\r\n</code>) que marca el fin exacto de los encabezados.</li>
+        <li>Un cuerpo opcional cuya longitud en bytes está determinada por <code>Content-Length</code>.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>2. Subconjunto HTTP/1.1 Implementado y Decisiones de Diseño</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Aspecto</th>
+            <th>Comportamiento Implementado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Modelo de Conexión</th>
+            <td>Una solicitud por conexión TCP con cierre explícito (<code>Connection: close</code>). No implementa <em>keep-alive</em>.</td>
+          </tr>
+          <tr>
+            <th>Concurrencia</th>
+            <td>Hilos (<code>threading.Thread</code>) por cliente con <code>socket_timeout</code> configurable.</td>
+          </tr>
+          <tr>
+            <th>Métodos Soportados</th>
+            <td><code>GET</code>, <code>HEAD</code> y <code>POST</code>. Otros métodos responden <code>405 Method Not Allowed</code> con cabecera <code>Allow</code>.</td>
+          </tr>
+          <tr>
+            <th>Delimitación de Cuerpo</th>
+            <td>Mediante <code>Content-Length</code>. Si un cliente envía <code>Transfer-Encoding: chunked</code>, se rechaza explícitamente con <code>501 Not Implemented</code>.</td>
+          </tr>
+          <tr>
+            <th>Prevención de Path Traversal</th>
+            <td>Decodificación controlada de URL, bloqueo de <code>..</code> y resolución canónica con <code>Path.resolve()</code> + <code>is_relative_to(DocumentRoot)</code>.</td>
+          </tr>
+          <tr>
+            <th>Autenticación</th>
+            <td><code>HTTP Basic Auth</code> en rutas protegidas y en <code>/admin</code>, comparando hashes <code>PBKDF2-HMAC-SHA256</code> con <code>hmac.compare_digest</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 1.25rem;">
+        <a href="/" class="btn">Volver a la página principal</a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Proyecto Académico &mdash; Redes de Información &mdash; UTN Facultad Regional Mendoza</p>
+    </div>
+  </footer>
+</body>
+</html>

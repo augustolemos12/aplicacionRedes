@@ -1,0 +1,13 @@
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "document_root": "www",
+  "admin_enabled": true,
+  "max_request_size": 1048576,
+  "socket_timeout": 10,
+  "protected_directories": [
+    "/private"
+  ],
+  "admin_username": "admin",
+  "admin_password_hash": "pbkdf2_sha256$200000$45790affdecf941a95f398008cbae8bf$18574d85e0dc7cd979ae6cb96d2a6e6e31a8761bfb1ce237aaad37b4c7b72f1c"
+}

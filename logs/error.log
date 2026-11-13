@@ -1,0 +1,4 @@
+
+[2026-11-13 10:36:48 -0300] [AUTH_REQUIRED] [client 127.0.0.1] [target /private/] Acceso no autorizado a directorio protegido (credenciales ausentes o inválidas).
+[2026-11-13 10:36:57 -0300] [NOT_FOUND] [client 127.0.0.1] [target /favicon.ico] Recurso estático no encontrado en DocumentRoot.
+[2026-11-13 10:38:03 -0300] [ADMIN_AUTH_FAILE...[truncated]] [client 127.0.0.1] [target /admin] Fallo de autenticación HTTP Basic en ruta administrativa.

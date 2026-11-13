@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documento Confidencial - Área Protegida</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-flex">
+      <div class="brand">
+        <div>
+          <h1>Reporte Interno de Red (Confidencial)</h1>
+          <p class="subtitle">Recurso ubicado en <code>www/private/confidential.html</code></p>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="/">Inicio</a>
+        <a href="/private/">Índice Privado</a>
+        <a href="/admin">Panel Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Protección de Todo el Árbol de Directorio</h2>
+      <p>
+        La regla configurada en <code>protected_directories: ["/private"]</code> protege tanto la raíz del directorio
+        como cualquier archivo o subdirectorio descendiente (por ejemplo, <code>/private/confidential.html</code>).
+      </p>
+      <p>
+        Además, el módulo <code>server/logging_setup.py</code> garantiza que el encabezado <code>Authorization</code>
+        nunca se escriba en <code>access.log</code> ni en <code>error.log</code>.
+      </p>
+      <p><a href="/private/" class="btn">Volver a /private/</a></p>
+    </section>
+  </main>
+</body>
+</html>

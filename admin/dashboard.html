@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Administrativo - Servidor HTTP Propio (UTN FRM)</title>
+  <link rel="stylesheet" href="/admin/style.css">
+</head>
+<body>
+  <header class="admin-header">
+    <div class="container header-row">
+      <div>
+        <h1>Panel de Administración del Servidor HTTP</h1>
+        <p class="subtitle">Redes de Información &mdash; Ingeniería en Sistemas de Información (UTN FRM)</p>
+      </div>
+      <div class="header-actions">
+        <button id="btn-refresh" type="button" class="btn btn-outline">Actualizar Datos</button>
+        <a href="/" class="btn btn-light">Ir al Sitio Público</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="security-warning" role="alert">
+      <strong>Aviso de Seguridad Académica:</strong> Este es un servidor HTTP/1.1 educativo sin cifrado TLS (HTTPS).
+      La autenticación <code>HTTP Basic</code> transmite credenciales codificadas en Base64. Es adecuado para prácticas en
+      <code>localhost</code> o red LAN de laboratorio, pero <strong>no debe exponerse a Internet público</strong> con credenciales reales.
+    </div>
+
+    <div id="restart-alert" class="restart-banner hidden">
+      <strong>Reinicio Manual Pendiente:</strong> Se guardaron cambios en parámetros de enlace o raíz (<code>host</code>, <code>port</code> o <code>document_root</code>).
+      Para aplicarlos en el socket TCP principal, detenga el servidor con <code>Ctrl+C</code> y vuelva a ejecutar <code>python main.py</code>.
+    </div>
+
+    <!-- Tarjetas de estado en tiempo real -->
+    <section class="status-grid" aria-label="Estado del Servidor">
+      <div class="stat-card">
+        <span class="stat-label">Estado del Socket TCP</span>
+        <strong id="stat-status" class="stat-value status-ok">Cargando...</strong>
+        <small id="stat-binding" class="stat-sub">-</small>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">DocumentRoot Activo</span>
+        <strong id="stat-docroot" class="stat-value">-</strong>
+        <small class="stat-sub">Validación canónica activa</small>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Tiempo en Ejecución (Uptime)</span>
+        <strong id="stat-uptime" class="stat-value">-</strong>
+        <small class="stat-sub">Modelo: Thread-per-request</small>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Solicitudes Procesadas</span>
+        <strong id="stat-requests" class="stat-value">-</strong>
+        <small class="stat-sub">Conexiones HTTP/1.1 (Connection: close)</small>
+      </div>
+    </section>
+
+    <div class="main-grid">
+      <!-- Formulario de Configuración -->
+      <section class="panel-card">
+        <h2>Configuración del Servidor (<code>config/server.json</code>)</h2>
+        <p class="panel-help">
+          Los cambios se validan en el servidor antes de persistirse. Las operaciones <code>POST</code> están protegidas con un token <code>CSRF</code> firmado.
+        </p>
+
+        <form id="config-form">
+          <fieldset class="field-group">
+            <legend>Parámetros de Enlace y Raíz <span class="badge-restart">Requieren Reinicio</span></legend>
+            <div class="form-row">
+              <div class="form-control">
+                <label for="cfg-host">Host / Interfaz IPv4</label>
+                <input type="text" id="cfg-host" name="host" required placeholder="0.0.0.0">
+                <small>Use <code>0.0.0.0</code> para LAN o <code>127.0.0.1</code> solo local.</small>
+              </div>
+              <div class="form-control">
+                <label for="cfg-port">Puerto TCP (1 - 65535)</label>
+                <input type="number" id="cfg-port" name="port" min="1" max="65535" required>
+                <small>Sugerido: <code>8080</code> (sin privilegios de administrador).</small>
+              </div>
+            </div>
+            <div class="form-control">
+              <label for="cfg-docroot">DocumentRoot (dentro del proyecto)</label>
+              <input type="text" id="cfg-docroot" name="document_root" required placeholder="www">
+              <small>Carpeta raíz desde donde se sirven los recursos estáticos.</small>
+            </div>
+          </fieldset>
+
+          <fieldset class="field-group">
+            <legend>Parámetros Operativos y de Seguridad <span class="badge-live">Aplicación Inmediata</span></legend>
+            <div class="form-row">
+              <div class="form-control">
+                <label for="cfg-maxsize">Tamaño Máx. Solicitud (bytes)</label>
+                <input type="number" id="cfg-maxsize" name="max_request_size" min="1024" max="52428800" required>
+                <small>Entre 1.024 B (1 KB) y 52.428.800 B (50 MB).</small>
+              </div>
+              <div class="form-control">
+                <label for="cfg-timeout">Timeout de Socket (segundos)</label>
+                <input type="number" id="cfg-timeout" name="socket_timeout" min="1" max="300" required>
+                <small>Entre 1 y 300 segundos por conexión.</small>
+              </div>
+            </div>
+
+            <div class="form-control">
+              <label for="cfg-protected">Directorios Protegidos con HTTP Basic (separados por coma)</label>
+              <input type="text" id="cfg-protected" name="protected_directories" placeholder="/private, /interno">
+              <small>Cada ruta debe iniciar con <code>/</code> y no contener <code>..</code>.</small>
+            </div>
+
+            <div class="form-control">
+              <label for="cfg-newpass">Cambiar Contraseña de Administrador (opcional)</label>
+              <input type="password" id="cfg-newpass" name="new_password" minlength="6" autocomplete="new-password" placeholder="Dejar vacío para mantener la contraseña actual">
+              <small>Si se ingresa, se almacenará únicamente su hash <code>PBKDF2-HMAC-SHA256</code> con sal.</small>
+            </div>
+          </fieldset>
+
+          <div id="form-feedback" class="feedback hidden" role="status"></div>
+
+          <button type="submit" class="btn btn-primary">Validar y Guardar Configuración</button>
+        </form>
+      </section>
+
+      <!-- Visor de Logs de Solo Lectura -->
+      <section class="panel-card">
+        <div class="logs-header">
+          <h2>Registros del Servidor (Solo Lectura)</h2>
+          <div class="logs-controls">
+            <label for="log-limit">Límite:</label>
+            <select id="log-limit">
+              <option value="20">Últimas 20 líneas</option>
+              <option value="40" selected>Últimas 40 líneas</option>
+              <option value="80">Últimas 80 líneas</option>
+            </select>
+            <button id="btn-reload-logs" type="button" class="btn btn-small">Recargar Logs</button>
+          </div>
+        </div>
+        <p class="panel-help">
+          Por seguridad, las entradas se sanitizan contra <em>Log Injection</em> y jamás incluyen encabezados <code>Authorization</code> ni contraseñas.
+        </p>
+
+        <div class="log-section">
+          <h3>Registro de Accesos (<code>logs/access.log</code>)</h3>
+          <pre id="access-log-box" class="log-viewer">Cargando access.log...</pre>
+        </div>
+
+        <div class="log-section">
+          <h3>Registro de Errores y Seguridad (<code>logs/error.log</code>)</h3>
+          <pre id="error-log-box" class="log-viewer log-viewer-error">Cargando error.log...</pre>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/admin/app.js"></script>
+</body>
+</html>

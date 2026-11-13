@@ -1,0 +1,2 @@
+# Este proyecto utiliza exclusivamente la biblioteca estándar de Python 3 (socket, threading, hashlib, hmac, json, logging, pathlib, urllib, unittest).
+# No se requieren paquetes externos para ejecutar el servidor ni la suite de pruebas.
