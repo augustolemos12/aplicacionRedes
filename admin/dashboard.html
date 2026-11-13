@@ -3,153 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Administrativo - Servidor HTTP Propio (UTN FRM)</title>
+  <title>SYSADMIN CONSOLE // UTN-FRM HTTPD v1.0</title>
   <link rel="stylesheet" href="/admin/style.css">
 </head>
 <body>
-  <header class="admin-header">
-    <div class="container header-row">
-      <div>
-        <h1>Panel de Administración del Servidor HTTP</h1>
-        <p class="subtitle">Redes de Información &mdash; Ingeniería en Sistemas de Información (UTN FRM)</p>
+  <header class="console-header">
+    <div class="console-topbar">
+      <div class="topbar-left">
+        <span class="led-indicator" id="activity-led" title="Indicador de enlace con API"></span>
+        <span>NODE: <strong>UTN-FRM-HTTPD/1.0</strong></span>
+        <span class="sep">|</span>
+        <span>SUBSYSTEM: <strong>ADMINISTRATION CONSOLE</strong></span>
+        <span class="sep">|</span>
+        <span>PID MODE: <strong>THREADING/TCP</strong></span>
       </div>
-      <div class="header-actions">
-        <button id="btn-refresh" type="button" class="btn btn-outline">Actualizar Datos</button>
-        <a href="/" class="btn btn-light">Ir al Sitio Público</a>
+      <div class="topbar-right">
+        <span id="header-state-badge" class="state-badge running">STATE: RUNNING</span>
+        <button id="btn-refresh" type="button" class="btn btn-compact">[SYNC TELEMETRY]</button>
+        <a href="/" class="btn btn-compact btn-amber">[PUBLIC ROOT /]</a>
       </div>
     </div>
   </header>
 
-  <main class="container">
-    <div class="security-warning" role="alert">
-      <strong>Aviso de Seguridad Académica:</strong> Este es un servidor HTTP/1.1 educativo sin cifrado TLS (HTTPS).
-      La autenticación <code>HTTP Basic</code> transmite credenciales codificadas en Base64. Es adecuado para prácticas en
-      <code>localhost</code> o red LAN de laboratorio, pero <strong>no debe exponerse a Internet público</strong> con credenciales reales.
-    </div>
-
-    <div id="restart-alert" class="restart-banner hidden">
-      <strong>Reinicio Manual Pendiente:</strong> Se guardaron cambios en parámetros de enlace o raíz (<code>host</code>, <code>port</code> o <code>document_root</code>).
-      Para aplicarlos en el socket TCP principal, detenga el servidor con <code>Ctrl+C</code> y vuelva a ejecutar <code>python main.py</code>.
-    </div>
-
-    <!-- Tarjetas de estado en tiempo real -->
-    <section class="status-grid" aria-label="Estado del Servidor">
-      <div class="stat-card">
-        <span class="stat-label">Estado del Socket TCP</span>
-        <strong id="stat-status" class="stat-value status-ok">Cargando...</strong>
-        <small id="stat-binding" class="stat-sub">-</small>
+  <div class="console-shell">
+    <!-- Navegación Lateral Sencilla de Estación de Trabajo -->
+    <aside class="console-sidebar" aria-label="Menú de Consola">
+      <div class="sidebar-block">
+        <div class="sidebar-title">CONSOLE NAVIGATION</div>
+        <nav class="sidebar-nav">
+          <a href="#section-status" class="nav-item active">&gt; 01. SYSTEM STATUS</a>
+          <a href="#section-config" class="nav-item">&gt; 02. SERVER CONFIG</a>
+          <a href="#section-logs" class="nav-item">&gt; 03. LOG TERMINAL</a>
+        </nav>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">DocumentRoot Activo</span>
-        <strong id="stat-docroot" class="stat-value">-</strong>
-        <small class="stat-sub">Validación canónica activa</small>
+
+      <div class="sidebar-block">
+        <div class="sidebar-title">NETWORK INTERFACE</div>
+        <dl class="tech-kv">
+          <dt>BIND ADDR</dt>
+          <dd id="side-bind">0.0.0.0:8080</dd>
+          <dt>PROTOCOL</dt>
+          <dd>HTTP/1.1 (TCP)</dd>
+          <dt>KEEP-ALIVE</dt>
+          <dd>DISABLED (CLOSE)</dd>
+          <dt>AUTH SCHEME</dt>
+          <dd>BASIC / PBKDF2</dd>
+          <dt>CSRF GUARD</dt>
+          <dd class="text-green">HMAC-SHA256</dd>
+          <dt>TLS LAYER</dt>
+          <dd class="text-amber">OFF (PLAINTEXT)</dd>
+        </dl>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Tiempo en Ejecución (Uptime)</span>
-        <strong id="stat-uptime" class="stat-value">-</strong>
-        <small class="stat-sub">Modelo: Thread-per-request</small>
+
+      <div class="sidebar-block">
+        <div class="sidebar-title">EXTERNAL LINKS</div>
+        <nav class="sidebar-nav">
+          <a href="/" class="nav-item">[EXT] SITIO PÚBLICO (/)</a>
+          <a href="/about.html" class="nav-item">[EXT] MANUAL TCP/HTTP</a>
+          <a href="/private/" class="nav-item">[EXT] SECTOR /private</a>
+        </nav>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Solicitudes Procesadas</span>
-        <strong id="stat-requests" class="stat-value">-</strong>
-        <small class="stat-sub">Conexiones HTTP/1.1 (Connection: close)</small>
+    </aside>
+
+    <!-- Área Principal de Operación -->
+    <main class="console-main">
+      <div class="security-warning" role="alert">
+        <span class="warn-tag">[SECURITY ADVISORY // NO-TLS]</span>
+        Servidor HTTP/1.1 académico sin cifrado TLS. Las credenciales <code>HTTP Basic</code> se transmiten codificadas en Base64.
+        Operar exclusivamente en <code>localhost</code> o red LAN de laboratorio; <strong>no exponer a Internet público</strong>.
       </div>
-    </section>
 
-    <div class="main-grid">
-      <!-- Formulario de Configuración -->
-      <section class="panel-card">
-        <h2>Configuración del Servidor (<code>config/server.json</code>)</h2>
-        <p class="panel-help">
-          Los cambios se validan en el servidor antes de persistirse. Las operaciones <code>POST</code> están protegidas con un token <code>CSRF</code> firmado.
-        </p>
+      <div id="restart-alert" class="restart-banner hidden">
+        <span class="warn-tag">[PENDING DAEMON RESTART]</span>
+        Se modificaron parámetros de enlace físico (<code>host</code>, <code>port</code> o <code>document_root</code>).
+        Detenga el proceso con <code>Ctrl+C</code> e inicie nuevamente <code>python main.py</code> para aplicarlos al socket TCP.
+      </div>
 
-        <form id="config-form">
-          <fieldset class="field-group">
-            <legend>Parámetros de Enlace y Raíz <span class="badge-restart">Requieren Reinicio</span></legend>
-            <div class="form-row">
-              <div class="form-control">
-                <label for="cfg-host">Host / Interfaz IPv4</label>
-                <input type="text" id="cfg-host" name="host" required placeholder="0.0.0.0">
-                <small>Use <code>0.0.0.0</code> para LAN o <code>127.0.0.1</code> solo local.</small>
-              </div>
-              <div class="form-control">
-                <label for="cfg-port">Puerto TCP (1 - 65535)</label>
-                <input type="number" id="cfg-port" name="port" min="1" max="65535" required>
-                <small>Sugerido: <code>8080</code> (sin privilegios de administrador).</small>
-              </div>
-            </div>
-            <div class="form-control">
-              <label for="cfg-docroot">DocumentRoot (dentro del proyecto)</label>
-              <input type="text" id="cfg-docroot" name="document_root" required placeholder="www">
-              <small>Carpeta raíz desde donde se sirven los recursos estáticos.</small>
-            </div>
-          </fieldset>
-
-          <fieldset class="field-group">
-            <legend>Parámetros Operativos y de Seguridad <span class="badge-live">Aplicación Inmediata</span></legend>
-            <div class="form-row">
-              <div class="form-control">
-                <label for="cfg-maxsize">Tamaño Máx. Solicitud (bytes)</label>
-                <input type="number" id="cfg-maxsize" name="max_request_size" min="1024" max="52428800" required>
-                <small>Entre 1.024 B (1 KB) y 52.428.800 B (50 MB).</small>
-              </div>
-              <div class="form-control">
-                <label for="cfg-timeout">Timeout de Socket (segundos)</label>
-                <input type="number" id="cfg-timeout" name="socket_timeout" min="1" max="300" required>
-                <small>Entre 1 y 300 segundos por conexión.</small>
-              </div>
-            </div>
-
-            <div class="form-control">
-              <label for="cfg-protected">Directorios Protegidos con HTTP Basic (separados por coma)</label>
-              <input type="text" id="cfg-protected" name="protected_directories" placeholder="/private, /interno">
-              <small>Cada ruta debe iniciar con <code>/</code> y no contener <code>..</code>.</small>
-            </div>
-
-            <div class="form-control">
-              <label for="cfg-newpass">Cambiar Contraseña de Administrador (opcional)</label>
-              <input type="password" id="cfg-newpass" name="new_password" minlength="6" autocomplete="new-password" placeholder="Dejar vacío para mantener la contraseña actual">
-              <small>Si se ingresa, se almacenará únicamente su hash <code>PBKDF2-HMAC-SHA256</code> con sal.</small>
-            </div>
-          </fieldset>
-
-          <div id="form-feedback" class="feedback hidden" role="status"></div>
-
-          <button type="submit" class="btn btn-primary">Validar y Guardar Configuración</button>
-        </form>
-      </section>
-
-      <!-- Visor de Logs de Solo Lectura -->
-      <section class="panel-card">
-        <div class="logs-header">
-          <h2>Registros del Servidor (Solo Lectura)</h2>
-          <div class="logs-controls">
-            <label for="log-limit">Límite:</label>
-            <select id="log-limit">
-              <option value="20">Últimas 20 líneas</option>
-              <option value="40" selected>Últimas 40 líneas</option>
-              <option value="80">Últimas 80 líneas</option>
-            </select>
-            <button id="btn-reload-logs" type="button" class="btn btn-small">Recargar Logs</button>
+      <!-- SECCIÓN 01: SYSTEM STATUS -->
+      <section id="section-status" class="panel-box">
+        <div class="panel-header">
+          <h2>[01] SYSTEM STATUS &amp; TELEMETRY</h2>
+          <span class="panel-meta">POLL: /admin/api/status</span>
+        </div>
+        <div class="status-grid">
+          <div class="stat-cell">
+            <span class="stat-label">TCP SOCKET STATUS</span>
+            <strong id="stat-status" class="stat-value text-green">ONLINE // RUNNING</strong>
+            <small id="stat-binding" class="stat-sub">BIND: -</small>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-label">ACTIVE DOCUMENT_ROOT</span>
+            <strong id="stat-docroot" class="stat-value">-</strong>
+            <small class="stat-sub">CANONICAL JAIL: ENABLED</small>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-label">DAEMON UPTIME</span>
+            <strong id="stat-uptime" class="stat-value">00h 00m 00s</strong>
+            <small class="stat-sub">WORKER MODEL: THREADING</small>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-label">HANDLED REQUESTS</span>
+            <strong id="stat-requests" class="stat-value">0</strong>
+            <small class="stat-sub">HTTP/1.1 TRANSACTIONS</small>
           </div>
         </div>
-        <p class="panel-help">
-          Por seguridad, las entradas se sanitizan contra <em>Log Injection</em> y jamás incluyen encabezados <code>Authorization</code> ni contraseñas.
-        </p>
+      </section>
 
-        <div class="log-section">
-          <h3>Registro de Accesos (<code>logs/access.log</code>)</h3>
-          <pre id="access-log-box" class="log-viewer">Cargando access.log...</pre>
+      <!-- SECCIÓN 02: SERVER CONFIGURATION -->
+      <section id="section-config" class="panel-box">
+        <div class="panel-header">
+          <h2>[02] SERVER CONFIGURATION // config/server.json</h2>
+          <span class="panel-meta">ENDPOINT: POST /admin/api/config</span>
         </div>
+        <div class="panel-body">
+          <form id="config-form">
+            <div class="config-columns">
+              <fieldset class="field-group">
+                <legend>NETWORK &amp; FILESYSTEM BINDING <span class="tag-amber">[RESTART REQUIRED]</span></legend>
 
-        <div class="log-section">
-          <h3>Registro de Errores y Seguridad (<code>logs/error.log</code>)</h3>
-          <pre id="error-log-box" class="log-viewer log-viewer-error">Cargando error.log...</pre>
+                <div class="param-row">
+                  <div class="param-info">
+                    <label for="cfg-host">HOST INTERFACE (IPv4)</label>
+                    <small><code>0.0.0.0</code> (LAN) o <code>127.0.0.1</code> (loopback)</small>
+                  </div>
+                  <div class="param-input">
+                    <input type="text" id="cfg-host" name="host" required placeholder="0.0.0.0">
+                  </div>
+                </div>
+
+                <div class="param-row">
+                  <div class="param-info">
+                    <label for="cfg-port">TCP LISTEN PORT</label>
+                    <small>Rango válido: <code>1..65535</code> (sugerido: <code>8080</code>)</small>
+                  </div>
+                  <div class="param-input">
+                    <input type="number" id="cfg-port" name="port" min="1" max="65535" required>
+                  </div>
+                </div>
+
+                <div class="param-row">
+                  <div class="param-info">
+                    <label for="cfg-docroot">DOCUMENT_ROOT PATH</label>
+                    <small>Directorio dentro del árbol del proyecto</small>
+                  </div>
+                  <div class="param-input">
+                    <input type="text" id="cfg-docroot" name="document_root" required placeholder="www">
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="field-group">
+                <legend>RUNTIME &amp; ACCESS CONTROL <span class="tag-green">[LIVE APPLICATION]</span></legend>
+
+                <div class="param-row">
+                  <div class="param-info">
+                    <label for="cfg-maxsize">MAX_REQUEST_SIZE (BYTES)</label>
+                    <small>Límite entre <code>1024</code> y <code>52428800</code> bytes</small>
+                  </div>
+                  <div class="param-input">
+                    <input type="number" id="cfg-maxsize" name="max_request_size" min="1024" max="52428800" required>
+                  </div>
+                </div>
+
+                <div class="param-row">
+                  <div class="param-info">
+                    <label for="cfg-timeout">SOCKET_TIMEOUT (SECONDS)</label>
+                    <small>Rango operativo: <code>1..300</code> segundos</small>
+                  </div>
+                  <div class="param-input">
+                    <input type="number" id="cfg-timeout" name="socket_timeout" min="1" max="300" required>
+                  </div>
+                </div>
+
+                <div class="param-row">
+                  <div class="param-info">
+                    <label for="cfg-protected">PROTECTED_DIRECTORIES</label>
+                    <small>Rutas separadas por coma (ej. <code>/private</code>)</small>
+                  </div>
+                  <div class="param-input">
+                    <input type="text" id="cfg-protected" name="protected_directories" placeholder="/private">
+                  </div>
+                </div>
+
+                <div class="param-row">
+                  <div class="param-info">
+                    <label for="cfg-newpass">ROTATE ADMIN PASSWORD</label>
+                    <small>Opcional (mín. 6 car.). Se guarda hash PBKDF2</small>
+                  </div>
+                  <div class="param-input">
+                    <input type="password" id="cfg-newpass" name="new_password" minlength="6" autocomplete="new-password" placeholder="[UNCHANGED]">
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div id="form-feedback" class="feedback hidden" role="status"></div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">[COMMIT &amp; VALIDATE CONFIGURATION]</button>
+            </div>
+          </form>
         </div>
       </section>
-    </div>
-  </main>
+
+      <!-- SECCIÓN 03: LOG TERMINAL -->
+      <section id="section-logs" class="panel-box">
+        <div class="panel-header">
+          <h2>[03] SYSTEM LOG TERMINAL (READ-ONLY)</h2>
+          <div class="logs-controls">
+            <label for="log-limit">BUFFER TAIL:</label>
+            <select id="log-limit">
+              <option value="20">20 LINES</option>
+              <option value="40" selected>40 LINES</option>
+              <option value="80">80 LINES</option>
+            </select>
+            <button id="btn-reload-logs" type="button" class="btn btn-compact">[REFRESH LOGS]</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <p class="terminal-note">
+            STREAM SANITIZATION: CRLF/CONTROL CHARS ESCAPED // AUTHORIZATION HEADERS OMITTED
+          </p>
+
+          <div class="terminal-split">
+            <div class="terminal-pane">
+              <div class="terminal-bar">
+                <span>FILE: logs/access.log</span>
+                <span class="text-green">STREAM: ACCESS</span>
+              </div>
+              <pre id="access-log-box" class="log-viewer">INITIALIZING ACCESS LOG BUFFER...</pre>
+            </div>
+
+            <div class="terminal-pane">
+              <div class="terminal-bar">
+                <span>FILE: logs/error.log</span>
+                <span class="text-amber">STREAM: ERROR / SECURITY</span>
+              </div>
+              <pre id="error-log-box" class="log-viewer log-viewer-error">INITIALIZING ERROR LOG BUFFER...</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="/admin/app.js"></script>
 </body>

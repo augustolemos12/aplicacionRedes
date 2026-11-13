@@ -164,56 +164,85 @@ def error_response(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Error {status_code} - {safe_reason}</title>
+  <title>HTTP FAULT {status_code} // {safe_reason}</title>
   <style>
     body {{
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #f8fafc;
-      color: #1e293b;
+      font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: #121311;
+      color: #e4e3dc;
       margin: 0;
-      padding: 3rem 1.5rem;
+      padding: 3rem 1.25rem;
     }}
     .card {{
-      max-width: 640px;
+      max-width: 680px;
       margin: 0 auto;
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-top: 4px solid #dc2626;
-      border-radius: 6px;
-      padding: 2rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      background: #191b18;
+      border: 1px solid #343932;
+      border-top: 3px solid #d49a35;
+    }}
+    .card-header {{
+      background: #1f221e;
+      border-bottom: 1px solid #343932;
+      padding: 0.65rem 1.15rem;
+      font-family: "IBM Plex Mono", "Consolas", monospace;
+      font-size: 0.82rem;
+      color: #d49a35;
+      display: flex;
+      justify-content: space-between;
+    }}
+    .card-body {{
+      padding: 1.5rem 1.25rem;
     }}
     h1 {{
-      margin-top: 0;
-      color: #b91c1c;
-      font-size: 1.5rem;
+      margin: 0 0 0.75rem;
+      font-family: "IBM Plex Mono", "Consolas", monospace;
+      color: #c9544d;
+      font-size: 1.35rem;
+      text-transform: uppercase;
     }}
     p {{
       line-height: 1.6;
-      color: #334155;
+      color: #e4e3dc;
+      margin: 0.5rem 0 1.25rem;
     }}
-    .footer {{
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid #e2e8f0;
-      font-size: 0.875rem;
-      color: #64748b;
-    }}
-    a {{
-      color: #2563eb;
+    .btn {{
+      display: inline-block;
+      font-family: "IBM Plex Mono", "Consolas", monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: #2b5e39;
+      color: #e4e3dc;
+      border: 1px solid #4da865;
+      padding: 0.5rem 0.95rem;
       text-decoration: none;
     }}
-    a:hover {{
-      text-decoration: underline;
+    .btn:hover {{
+      background: #4da865;
+      color: #0c0d0c;
+    }}
+    .footer {{
+      padding: 0.7rem 1.25rem;
+      border-top: 1px solid #343932;
+      background: #0c0d0c;
+      font-family: "IBM Plex Mono", "Consolas", monospace;
+      font-size: 0.76rem;
+      color: #949990;
     }}
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>{status_code} {safe_reason}</h1>
-    <p>{safe_detail}</p>
-    <p><a href="/">Volver al inicio</a></p>
-    <div class="footer">Servidor HTTP Propio en Python &mdash; Redes de Información (UTN FRM)</div>
+    <div class="card-header">
+      <span>[SYSTEM DIAGNOSTIC // HTTP EXCEPTION]</span>
+      <span>CODE: {status_code}</span>
+    </div>
+    <div class="card-body">
+      <h1>[{status_code}] {safe_reason}</h1>
+      <p>{safe_detail}</p>
+      <a href="/" class="btn">&lt; RETURN TO ROOT CONSOLE (/)</a>
+    </div>
+    <div class="footer">UTN-FRM // SERVIDOR HTTP/1.1 PROPIO EN PYTHON &mdash; REDES DE INFORMACIÓN</div>
   </div>
 </body>
 </html>

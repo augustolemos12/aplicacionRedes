@@ -3,90 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acerca del Servidor - Arquitectura TCP y HTTP/1.1</title>
+  <title>MANUAL PAGE: HTTPD-ARCH(7) — Servidor HTTP UTN FRM</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header class="site-header">
+    <div class="sys-topbar">
+      <div class="container sys-topbar-flex">
+        <div class="telemetry-group">
+          <span class="telemetry-item">MANUAL: <strong>HTTPD-ARCH(7)</strong></span>
+          <span class="telemetry-item">STACK: <strong>TCP/IP LAYER 4 &amp; LAYER 7</strong></span>
+        </div>
+        <div class="telemetry-group">
+          <span class="status-tag">DOCUMENTATION: ONLINE</span>
+        </div>
+      </div>
+    </div>
     <div class="container header-flex">
       <div class="brand">
-        <img src="/logo.svg" alt="Icono Servidor HTTP" class="logo" width="44" height="44">
+        <img src="/logo.svg" alt="Terminal Icon" class="logo" width="44" height="44">
         <div>
-          <h1>Arquitectura y Fundamentos de Red</h1>
-          <p class="subtitle">Separación entre Transporte (TCP) y Aplicación (HTTP/1.1)</p>
+          <h1>Especificación Técnica: Transporte TCP y Aplicación HTTP</h1>
+          <p class="subtitle">DOCUMENTACIÓN INTERNA DEL SERVIDOR &mdash; REDES DE INFORMACIÓN (UTN FRM)</p>
         </div>
       </div>
       <nav class="main-nav">
-        <a href="/">Inicio</a>
-        <a href="/about.html" class="active">Arquitectura TCP/HTTP</a>
-        <a href="/private/">Área Protegida</a>
-        <a href="/admin">Panel Admin</a>
+        <a href="/">[01] Inicio</a>
+        <a href="/about.html" class="active">[02] Manual TCP/HTTP</a>
+        <a href="/private/">[03] /private</a>
+        <a href="/admin">[04] Consola Admin</a>
       </nav>
     </div>
   </header>
 
   <main class="container">
     <section class="card">
-      <h2>1. Diferencia entre TCP y HTTP en nuestra implementación</h2>
-      <p>
-        <strong>TCP (Transmission Control Protocol)</strong> opera en la capa de transporte y proporciona un flujo continuo, ordenado y confiable de bytes entre el socket del cliente y el socket del servidor (<code>server/socket_server.py</code>). TCP no conoce el concepto de "mensaje", "encabezado" ni "archivo": una llamada a <code>sock.recv()</code> puede devolver una fracción de línea o varios fragmentos juntos.
-      </p>
-      <p>
-        <strong>HTTP/1.1 (Hypertext Transfer Protocol)</strong> opera en la capa de aplicación (<code>server/http_parser.py</code> y <code>server/response.py</code>). Define cómo estructurar e interpretar ese flujo de bytes mediante:
-      </p>
-      <ul>
-        <li>Una línea de inicio terminada en <code>CRLF</code> (<code>\r\n</code>), por ejemplo: <code>GET /about.html HTTP/1.1</code>.</li>
-        <li>Encabezados clave-valor insensibles a mayúsculas/minúsculas.</li>
-        <li>Una línea vacía (<code>\r\n\r\n</code>) que marca el fin exacto de los encabezados.</li>
-        <li>Un cuerpo opcional cuya longitud en bytes está determinada por <code>Content-Length</code>.</li>
-      </ul>
+      <div class="card-header">
+        <h2>SECTION 1 // TRANSPORTE TCP VS. APLICACIÓN HTTP/1.1</h2>
+        <span class="card-tag">MODULE: socket_server.py</span>
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>Capa de Transporte — TCP (Transmission Control Protocol):</strong> Opera sobre sockets de flujo (<code>socket.AF_INET</code>, <code>socket.SOCK_STREAM</code>). Garantiza entrega ordenada y libre de errores de un flujo continuo de bytes entre procesos, pero carece de delimitadores de mensaje: una invocación a <code>sock.recv(4096)</code> puede retornar desde un único byte hasta múltiples líneas agrupadas.
+        </p>
+        <p>
+          <strong>Capa de Aplicación — HTTP/1.1 (Hypertext Transfer Protocol):</strong> Implementada en <code>server/http_parser.py</code> y <code>server/response.py</code>. Impone una gramática determinista sobre el flujo TCP:
+        </p>
+        <ul>
+          <li>Línea de petición delimitada por <code>CRLF</code> (<code>\r\n</code>): <code>MÉTODO RUTA VERSIÓN</code>.</li>
+          <li>Colección de encabezados normalizados sin distinción de mayúsculas/minúsculas.</li>
+          <li>Secuencia centinela <code>\r\n\r\n</code> que separa los metadatos del cuerpo de entidad.</li>
+          <li>Lectura exacta de bytes del cuerpo gobernada por el encabezado <code>Content-Length</code>.</li>
+        </ul>
+      </div>
     </section>
 
     <section class="card">
-      <h2>2. Subconjunto HTTP/1.1 Implementado y Decisiones de Diseño</h2>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Aspecto</th>
-            <th>Comportamiento Implementado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th>Modelo de Conexión</th>
-            <td>Una solicitud por conexión TCP con cierre explícito (<code>Connection: close</code>). No implementa <em>keep-alive</em>.</td>
-          </tr>
-          <tr>
-            <th>Concurrencia</th>
-            <td>Hilos (<code>threading.Thread</code>) por cliente con <code>socket_timeout</code> configurable.</td>
-          </tr>
-          <tr>
-            <th>Métodos Soportados</th>
-            <td><code>GET</code>, <code>HEAD</code> y <code>POST</code>. Otros métodos responden <code>405 Method Not Allowed</code> con cabecera <code>Allow</code>.</td>
-          </tr>
-          <tr>
-            <th>Delimitación de Cuerpo</th>
-            <td>Mediante <code>Content-Length</code>. Si un cliente envía <code>Transfer-Encoding: chunked</code>, se rechaza explícitamente con <code>501 Not Implemented</code>.</td>
-          </tr>
-          <tr>
-            <th>Prevención de Path Traversal</th>
-            <td>Decodificación controlada de URL, bloqueo de <code>..</code> y resolución canónica con <code>Path.resolve()</code> + <code>is_relative_to(DocumentRoot)</code>.</td>
-          </tr>
-          <tr>
-            <th>Autenticación</th>
-            <td><code>HTTP Basic Auth</code> en rutas protegidas y en <code>/admin</code>, comparando hashes <code>PBKDF2-HMAC-SHA256</code> con <code>hmac.compare_digest</code>.</td>
-          </tr>
-        </tbody>
-      </table>
-      <p style="margin-top: 1.25rem;">
-        <a href="/" class="btn">Volver a la página principal</a>
-      </p>
+      <div class="card-header">
+        <h2>SECTION 2 // PARÁMETROS DEL SUBCONJUNTO IMPLEMENTADO</h2>
+        <span class="card-tag">SPEC: RFC 9112 SUBSET</span>
+      </div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>SUBSISTEMA</th>
+              <th>ESPECIFICACIÓN OPERATIVA</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>CICLO DE CONEXIÓN</th>
+              <td>Una transacción HTTP por socket TCP con cierre explícito (<code>Connection: close</code>). Sin <em>keep-alive</em>.</td>
+            </tr>
+            <tr>
+              <th>CONCURRENCIA</th>
+              <td>Despacho multihilo (<code>threading.Thread</code>) con temporizador de lectura (<code>socket_timeout</code>).</td>
+            </tr>
+            <tr>
+              <th>MÉTODOS ADMITIDOS</th>
+              <td><code>GET</code>, <code>HEAD</code> y <code>POST</code>. Cualquier otro método recibe <code>405 Method Not Allowed</code> + cabecera <code>Allow</code>.</td>
+            </tr>
+            <tr>
+              <th>CODIFICACIÓN DE TRANSFERENCIA</th>
+              <td><code>Content-Length</code> obligatorio para cuerpos. <code>Transfer-Encoding: chunked</code> se rechaza con <code>501 Not Implemented</code>.</td>
+            </tr>
+            <tr>
+              <th>AISLAMIENTO DE SISTEMA DE ARCHIVOS</th>
+              <td>Normalización de URL, rechazo de <code>..</code> y verificación canónica con <code>Path.resolve().is_relative_to(DocumentRoot)</code>.</td>
+            </tr>
+            <tr>
+              <th>CONTROL DE ACCESO</th>
+              <td><code>HTTP Basic Auth</code> validado contra hashes <code>PBKDF2-HMAC-SHA256</code> (200.000 iteraciones) mediante <code>hmac.compare_digest</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 1.25rem;">
+          <a href="/" class="btn">&lt; RETURN TO MAIN CONSOLE</a>
+        </p>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      <p>Proyecto Académico &mdash; Redes de Información &mdash; UTN Facultad Regional Mendoza</p>
+      <span>UTN FACULTAD REGIONAL MENDOZA // REDES DE INFORMACIÓN // MANUAL TÉCNICO HTTPD</span>
     </div>
   </footer>
 </body>

@@ -3,103 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Servidor HTTP Propio en Python - UTN FRM</title>
+  <title>UTN-FRM // HTTPD v1.0 — Consola Pública del Servidor</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header class="site-header">
-    <div class="container header-flex">
-      <div class="brand">
-        <img src="/logo.svg" alt="Icono Servidor HTTP" class="logo" width="44" height="44">
-        <div>
-          <h1>Servidor HTTP/1.1 Propio en Python</h1>
-          <p class="subtitle">Redes de Información &mdash; Ingeniería en Sistemas de Información (UTN FRM)</p>
+    <div class="sys-topbar">
+      <div class="container sys-topbar-flex">
+        <div class="telemetry-group">
+          <span class="telemetry-item">SYS: <strong>UTN-FRM-HTTPD/1.0</strong></span>
+          <span class="telemetry-item">TRANSPORT: <strong>TCP/IPv4 (AF_INET)</strong></span>
+          <span class="telemetry-item">CONN MODE: <strong>CLOSE</strong></span>
+        </div>
+        <div class="telemetry-group">
+          <span class="status-tag">DAEMON: RUNNING</span>
+          <span class="status-tag amber">TLS: OFF (LAN LAB)</span>
         </div>
       </div>
-      <nav class="main-nav">
-        <a href="/" class="active">Inicio</a>
-        <a href="/about.html">Arquitectura TCP/HTTP</a>
-        <a href="/private/">Área Protegida</a>
-        <a href="/admin">Panel Admin</a>
+    </div>
+    <div class="container header-flex">
+      <div class="brand">
+        <img src="/logo.svg" alt="Terminal Icon" class="logo" width="44" height="44">
+        <div>
+          <h1>UTN-FRM // Servidor HTTP/1.1 Propio</h1>
+          <p class="subtitle">CÁTEDRA: REDES DE INFORMACIÓN &mdash; INGENIERÍA EN SISTEMAS DE INFORMACIÓN</p>
+        </div>
+      </div>
+      <nav class="main-nav" aria-label="Navegación Principal">
+        <a href="/" class="active">[01] Inicio</a>
+        <a href="/about.html">[02] Manual TCP/HTTP</a>
+        <a href="/private/">[03] /private</a>
+        <a href="/admin">[04] Consola Admin</a>
       </nav>
     </div>
   </header>
 
   <main class="container">
     <div class="notice-banner">
-      <strong>Entorno Académico Demostrativo:</strong> Este servidor gestiona directamente sockets TCP IPv4 y analiza mensajes HTTP/1.1 sin emplear Apache, Nginx, Flask ni <code>http.server</code>.
+      <span class="banner-label">[SYSTEM NOTICE // ACADEMIC NODE]</span>
+      Implementación propia del protocolo HTTP/1.1 directamente sobre sockets BSD (<code>socket</code> + <code>threading</code>), sin Apache, Nginx, Flask ni <code>http.server</code>.
     </div>
 
     <div class="grid-2">
       <section class="card">
-        <h2>Pruebas Rápidas para la Exposición</h2>
-        <p>Utilice los siguientes enlaces para verificar en vivo cada requisito de la consigna y observar las entradas generadas en <code>logs/access.log</code> y <code>logs/error.log</code>:</p>
-        <ul class="demo-links">
-          <li>
-            <a href="/about.html"><strong>1. Solicitud GET estática (200 OK)</strong></a>
-            <span>Sirve documento HTML sobre el modelo TCP/IP y el parser HTTP.</span>
-          </li>
-          <li>
-            <a href="/private/index.html"><strong>2. Directorio Protegido (401 / 200)</strong></a>
-            <span>Solicita autenticación <code>HTTP Basic</code> antes de entregar el recurso en <code>/private/</code>.</span>
-          </li>
-          <li>
-            <a href="/private/confidential.html"><strong>3. Documento Confidencial en /private</strong></a>
-            <span>Segundo archivo dentro del directorio protegido.</span>
-          </li>
-          <li>
-            <a href="/recurso-inexistente.html"><strong>4. Recurso Inexistente (404 Not Found)</strong></a>
-            <span>Demuestra manejo de errores HTTP y registro en <code>error.log</code>.</span>
-          </li>
-          <li>
-            <a href="/%2e%2e/config/server.json"><strong>5. Prueba de Path Traversal Codificado (403 Forbidden)</strong></a>
-            <span>Intenta escapar del <code>DocumentRoot</code> hacia <code>config/server.json</code> usando <code>%2e%2e</code>.</span>
-          </li>
-          <li>
-            <a href="/admin"><strong>6. Panel Web de Administración (/admin)</strong></a>
-            <span>Consulta estado, logs y modifica parámetros validados del servidor.</span>
-          </li>
-        </ul>
+        <div class="card-header">
+          <h2>[01] RESOURCE DIRECTORY &amp; TEST VECTORS</h2>
+          <span class="card-tag">DOCROOT: /www</span>
+        </div>
+        <div class="card-body">
+          <p>Seleccione un vector de prueba para inspeccionar la respuesta del servidor y verificar su registro en <code>logs/access.log</code> y <code>logs/error.log</code>:</p>
+          <ul class="demo-links">
+            <li>
+              <a href="/about.html">&gt; GET /about.html [200 OK]</a>
+              <span>Especificación técnica de la separación entre capa de transporte TCP y aplicación HTTP/1.1.</span>
+            </li>
+            <li>
+              <a href="/private/index.html">&gt; GET /private/index.html [401 / 200 BASIC AUTH]</a>
+              <span>Acceso restringido mediante encabezado <code>Authorization: Basic</code> y hash PBKDF2-SHA256.</span>
+            </li>
+            <li>
+              <a href="/private/confidential.html">&gt; GET /private/confidential.html [PROTECTED NODE]</a>
+              <span>Segundo documento técnico alojado dentro del árbol protegido <code>/private</code>.</span>
+            </li>
+            <li>
+              <a href="/recurso-inexistente.html">&gt; GET /recurso-inexistente.html [404 NOT FOUND]</a>
+              <span>Dispara respuesta de recurso ausente y registro de diagnóstico en <code>error.log</code>.</span>
+            </li>
+            <li>
+              <a href="/%2e%2e/config/server.json">&gt; GET /%2e%2e/config/server.json [403 PATH TRAVERSAL]</a>
+              <span>Vector de escape codificado fuera del <code>DocumentRoot</code> bloqueado por resolución canónica.</span>
+            </li>
+            <li>
+              <a href="/admin">&gt; GET /admin [SYSTEM ADMINISTRATION CONSOLE]</a>
+              <span>Interfaz de operador para telemetría, lectura de logs y configuración del servidor.</span>
+            </li>
+          </ul>
+        </div>
       </section>
 
       <section class="card">
-        <h2>Demostración de Solicitud POST</h2>
-        <p>Este formulario envía una petición <code>POST /contacto</code> con encabezado <code>Content-Type: application/x-www-form-urlencoded</code> y <code>Content-Length</code>.</p>
-        <form action="/contacto" method="POST" class="demo-form">
-          <div class="form-group">
-            <label for="alumno">Nombre o Integrante:</label>
-            <input type="text" id="alumno" name="alumno" value="Estudiante UTN FRM" required>
-          </div>
-          <div class="form-group">
-            <label for="comision">Comisión / Cátedra:</label>
-            <input type="text" id="comision" name="comision" value="Redes de Información" required>
-          </div>
-          <div class="form-group">
-            <label for="mensaje">Mensaje de prueba:</label>
-            <textarea id="mensaje" name="mensaje" rows="3" required>Prueba de envío de cuerpo HTTP sobre flujo TCP con Content-Length.</textarea>
-          </div>
-          <button type="submit" class="btn">Enviar Formulario POST</button>
-        </form>
+        <div class="card-header">
+          <h2>[02] FORM DATA TRANSMISSION // POST</h2>
+          <span class="card-tag">ENC: URLENCODED</span>
+        </div>
+        <div class="card-body">
+          <p>Transmite una solicitud <code>POST /contacto</code> delimitada por encabezado <code>Content-Length</code> sobre el flujo TCP:</p>
+          <form action="/contacto" method="POST" class="demo-form">
+            <div class="form-group">
+              <label for="alumno">OPERATOR / STUDENT ID:</label>
+              <input type="text" id="alumno" name="alumno" value="Estudiante UTN FRM" required>
+            </div>
+            <div class="form-group">
+              <label for="comision">UNIT / COURSE:</label>
+              <input type="text" id="comision" name="comision" value="Redes de Información" required>
+            </div>
+            <div class="form-group">
+              <label for="mensaje">PAYLOAD DATA:</label>
+              <textarea id="mensaje" name="mensaje" rows="3" required>Prueba de lectura de cuerpo HTTP mediante Content-Length exacto sobre stream TCP.</textarea>
+            </div>
+            <button type="submit" class="btn">TRANSMIT POST PAYLOAD</button>
+          </form>
+        </div>
       </section>
     </div>
 
     <section class="card">
-      <h2>Verificación de Tipos MIME y Archivos Binarios</h2>
-      <p>Esta página carga recursos adicionales a través de conexiones TCP independientes, comprobando la entrega correcta de cabeceras <code>Content-Type</code> y <code>Content-Length</code>:</p>
-      <div class="mime-badges">
-        <span class="badge">HTML: <code>text/html; charset=utf-8</code></span>
-        <span class="badge">CSS: <code>text/css; charset=utf-8</code></span>
-        <span class="badge">JS: <code>application/javascript; charset=utf-8</code></span>
-        <span class="badge">SVG: <code>image/svg+xml</code></span>
-        <span class="badge">PNG binario: <code>image/png</code> (<a href="/pixel.png" target="_blank">ver /pixel.png</a>)</span>
+      <div class="card-header">
+        <h2>[03] MIME SUBSYSTEM &amp; BINARY STREAM VERIFICATION</h2>
+        <span class="card-tag">MODE: OCTET-SAFE</span>
       </div>
-      <p id="js-status" class="js-status">Verificando ejecución de script estático <code>/app.js</code>...</p>
+      <div class="card-body">
+        <p>El serializador HTTP construye las respuestas en modo binario estricto, preservando la integridad byte a byte de textos y archivos gráficos:</p>
+        <div class="mime-badges">
+          <span class="badge">HTML: <code>text/html; charset=utf-8</code></span>
+          <span class="badge">CSS: <code>text/css; charset=utf-8</code></span>
+          <span class="badge">JS: <code>application/javascript; charset=utf-8</code></span>
+          <span class="badge">SVG: <code>image/svg+xml</code></span>
+          <span class="badge">PNG BINARIO: <code>image/png</code> [<a href="/pixel.png" target="_blank">INSPECT /pixel.png</a>]</span>
+        </div>
+        <p id="js-status" class="js-status">[DIAG] PROBING STATIC SCRIPT /app.js ...</p>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      <p>Proyecto Académico &mdash; Redes de Información &mdash; UTN Facultad Regional Mendoza</p>
+      <span>UTN FACULTAD REGIONAL MENDOZA // REDES DE INFORMACIÓN // SERVIDOR HTTP/1.1 PROPIO EN PYTHON</span>
     </div>
   </footer>
 

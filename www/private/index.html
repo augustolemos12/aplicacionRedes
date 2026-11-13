@@ -3,45 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Área Protegida (/private) - Servidor HTTP UTN FRM</title>
+  <title>RESTRICTED SECTOR: /private — Servidor HTTP UTN FRM</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header class="site-header">
+    <div class="sys-topbar">
+      <div class="container sys-topbar-flex">
+        <div class="telemetry-group">
+          <span class="telemetry-item">SECTOR: <strong>/private</strong></span>
+          <span class="telemetry-item">AUTH SCHEME: <strong>HTTP BASIC (RFC 7617)</strong></span>
+        </div>
+        <div class="telemetry-group">
+          <span class="status-tag">CLEARANCE: GRANTED</span>
+        </div>
+      </div>
+    </div>
     <div class="container header-flex">
       <div class="brand">
-        <img src="/logo.svg" alt="Icono Servidor HTTP" class="logo" width="44" height="44">
+        <img src="/logo.svg" alt="Terminal Icon" class="logo" width="44" height="44">
         <div>
-          <h1>Directorio Protegido (/private)</h1>
-          <p class="subtitle">Acceso concedido mediante autenticación HTTP Basic</p>
+          <h1>Directorio Protegido // Acceso Autorizado</h1>
+          <p class="subtitle">RECURSO SERVIDO DESDE: <code>www/private/index.html</code></p>
         </div>
       </div>
       <nav class="main-nav">
-        <a href="/">Inicio</a>
-        <a href="/about.html">Arquitectura TCP/HTTP</a>
-        <a href="/private/" class="active">Área Protegida</a>
-        <a href="/admin">Panel Admin</a>
+        <a href="/">[01] Inicio</a>
+        <a href="/about.html">[02] Manual TCP/HTTP</a>
+        <a href="/private/" class="active">[03] /private</a>
+        <a href="/admin">[04] Consola Admin</a>
       </nav>
     </div>
   </header>
 
   <main class="container">
     <section class="card">
-      <h2>Autenticación Verificada Correctamente</h2>
-      <p>
-        Usted está visualizando <code>/private/index.html</code> porque su navegador envió el encabezado
-        <code>Authorization: Basic ...</code> con credenciales válidas.
-      </p>
-      <div class="meta-box">
-        <p><strong>Mecanismo utilizado:</strong> HTTP Basic Authentication (RFC 7617).</p>
-        <p><strong>Almacenamiento en el servidor:</strong> Hash <code>PBKDF2-HMAC-SHA256</code> con sal aleatoria de 16 bytes y 200.000 iteraciones en <code>config/server.json</code>.</p>
-        <p><strong>Advertencia académica:</strong> En HTTP sin TLS (HTTPS), las credenciales viajan codificadas en Base64 (reversibles en tránsito). Este esquema es apto para laboratorio en LAN local, pero en producción real debe combinarse siempre con HTTPS/TLS.</p>
+      <div class="card-header">
+        <h2>[SECURITY CLEARANCE VERIFIED // REALM: AREA PROTEGIDA]</h2>
+        <span class="card-tag">HTTP 200 OK</span>
       </div>
-      <p style="margin-top: 1.25rem;">
-        <a href="/private/confidential.html" class="btn">Ver documento confidencial secundario</a>
-        <a href="/" class="btn btn-secondary">Volver al inicio</a>
-      </p>
+      <div class="card-body">
+        <p>
+          El módulo <code>server/security.py</code> ha validado las credenciales recibidas en el encabezado
+          <code>Authorization: Basic</code> contra el registro criptográfico del servidor.
+        </p>
+        <div class="meta-box">
+          <p><strong>ALGORITMO DE DERIVACIÓN:</strong> <code>PBKDF2-HMAC-SHA256</code> (sal aleatoria de 128 bits, 200.000 iteraciones).</p>
+          <p><strong>COMPARACIÓN CRIPTOGRÁFICA:</strong> Tiempo constante mediante <code>hmac.compare_digest()</code>.</p>
+          <p><strong>AUDITORÍA DE LOGS:</strong> El encabezado <code>Authorization</code> está excluido de <code>access.log</code> y <code>error.log</code>.</p>
+          <p><strong>ADVERTENCIA DE PROTOCOLO:</strong> En HTTP sin capa TLS, Base64 es una codificación reversible y no un cifrado; utilícese únicamente en redes de laboratorio.</p>
+        </div>
+        <p style="margin-top: 1.25rem;">
+          <a href="/private/confidential.html" class="btn">OPEN /private/confidential.html</a>
+          <a href="/" class="btn btn-secondary">RETURN TO ROOT</a>
+        </p>
+      </div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>UTN FACULTAD REGIONAL MENDOZA // SECTOR PROTEGIDO /private</span>
+    </div>
+  </footer>
 </body>
 </html>

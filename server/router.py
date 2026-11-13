@@ -256,41 +256,73 @@ class HTTPRouter:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solicitud POST Procesada - Servidor HTTP UTN FRM</title>
+  <title>POST PAYLOAD INSPECTOR — Servidor HTTP UTN FRM</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header class="site-header">
-    <div class="container">
-      <h1>Respuesta del Servidor a Solicitud POST</h1>
-      <p class="subtitle">Procesamiento HTTP/1.1 con lectura de cuerpo vía <code>Content-Length</code></p>
+    <div class="sys-topbar">
+      <div class="container sys-topbar-flex">
+        <div class="telemetry-group">
+          <span class="telemetry-item">METHOD: <strong>POST</strong></span>
+          <span class="telemetry-item">CONTENT-LENGTH: <strong>{len(request.body)} BYTES</strong></span>
+        </div>
+        <div class="telemetry-group">
+          <span class="status-tag">STATUS: 200 OK</span>
+        </div>
+      </div>
+    </div>
+    <div class="container header-flex">
+      <div class="brand">
+        <img src="/logo.svg" alt="Terminal Icon" class="logo" width="44" height="44">
+        <div>
+          <h1>Respuesta del Servidor // Transacción POST</h1>
+          <p class="subtitle">LECTURA DE FLUJO TCP GOBERNADA POR ENCABEZADO <code>Content-Length</code></p>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="/">[01] Inicio</a>
+        <a href="/about.html">[02] Manual TCP/HTTP</a>
+        <a href="/private/">[03] /private</a>
+        <a href="/admin">[04] Consola Admin</a>
+      </nav>
     </div>
   </header>
   <main class="container">
     <section class="card">
-      <h2>Datos recibidos (<code>application/x-www-form-urlencoded</code>)</h2>
-      <p>El servidor leyó <strong>{len(request.body)} bytes</strong> del flujo TCP correspondientes al cuerpo de la petición.</p>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Campo</th>
-            <th>Valor recibido (sanitizado)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {joined_rows}
-        </tbody>
-      </table>
-      <div class="meta-box">
-        <p><strong>Ruta destino:</strong> <code>{html.escape(clean_path)}</code></p>
-        <p><strong>IP Cliente:</strong> <code>{html.escape(request.client_ip)}</code></p>
-        <p><strong>Fecha/Hora del servidor:</strong> <code>{timestamp_str}</code></p>
+      <div class="card-header">
+        <h2>[DECODED FORM PAYLOAD // application/x-www-form-urlencoded]</h2>
+        <span class="card-tag">BYTES: {len(request.body)}</span>
       </div>
-      <p style="margin-top: 1.5rem;">
-        <a href="/" class="btn">Volver al inicio</a>
-      </p>
+      <div class="card-body">
+        <p>El servidor leyó exactamente <strong>{len(request.body)} bytes</strong> del socket TCP correspondientes al cuerpo de la petición:</p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>PARAMETER KEY</th>
+              <th>SANITIZED VALUE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {joined_rows}
+          </tbody>
+        </table>
+        <div class="meta-box">
+          <p><strong>TARGET ENDPOINT:</strong> <code>{html.escape(clean_path)}</code></p>
+          <p><strong>CLIENT ADDRESS:</strong> <code>{html.escape(request.client_ip)}</code></p>
+          <p><strong>SERVER TIMESTAMP:</strong> <code>{timestamp_str}</code></p>
+        </div>
+        <p style="margin-top: 1.5rem;">
+          <a href="/" class="btn">&lt; RETURN TO MAIN CONSOLE</a>
+        </p>
+      </div>
     </section>
   </main>
+  <footer class="site-footer">
+    <div class="container">
+      <span>UTN FACULTAD REGIONAL MENDOZA // REDES DE INFORMACIÓN // POST INSPECTOR</span>
+    </div>
+  </footer>
 </body>
 </html>
 """
